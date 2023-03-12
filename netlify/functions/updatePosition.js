@@ -2,30 +2,32 @@ const fetch = require("node-fetch"); //npm install node-fetch
 // import fetch from 'node-fetch';
 
 exports.handler = async function (event) {
-    const address = JSON.parse(event.body);
+    const dict = JSON.parse(event.body);
     const url = process.env.ASTRA_GRAPHQL_ENDPOINT;
-    console.log(address);
+    
     const query = `
-    query getAll {
-        positions (value: {address:"0x4025d62d9a69f2f63211a97b6c0a65c7cfccd114"}) {
-          values {
-            address
-            pairAddress
-            time 
-            date
-            liquidity
-            token1Address
-            token2Address
-            token1Amount
-            token2Amount
-            open,
-          }
+    mutation {
+        liquidityPosition: updateliquidityPositions(
+        value: {
+            address: "${dict["address"]}",
+            pairAddress: "${dict["pairAddress"]}",
+            liquidity: ${dict["liquidity"]},
+            token1Amount:${dict["token1Amount"]},
+            token2Amount:${dict["token2Amount"]},
+            open: ${dict["open"]},
         }
-    }
+    )
+        
+        {
+                value{
+                        address
+                    }
+                
+            }
+        }
     `;
 
-    console.log(query);
-
+    console.log(query)  
     const response = await fetch(url, {
         method: "POST",
         headers: {
@@ -35,8 +37,10 @@ exports.handler = async function (event) {
         body: JSON.stringify({ query }),
     });
 
+
     try {
         const responseBody = await response.json();
+        console.log(responseBody)
         return {
             statusCode: 200,
             body: JSON.stringify(responseBody),

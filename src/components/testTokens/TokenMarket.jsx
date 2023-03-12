@@ -13,7 +13,7 @@ export default function TokenMarket() {
 
     const [newTokenName, setNewTokenName] = useState("");
     const [newTokenSymbol, setNewTokenSymbol] = useState("");
-    const [addLoading, setAddLoading] = useState(false);
+    const [initialAmount, setInitialAmount] = useState("");
 
     useEffect(() => {
         const getTkns = async () => {
@@ -36,10 +36,14 @@ export default function TokenMarket() {
         setNewTokenSymbol(event.target.value);
     };
 
+    const onInitialAmountChange = (event) => {
+        setInitialAmount(event.target.value);
+    };
+
     const confirmAddToken = async () => {
-        setAddLoading(true);
-        await addToken(newTokenName, newTokenSymbol);
-        setAddLoading(false);
+        setLoading(true);
+        await addToken(newTokenName, newTokenSymbol, initialAmount);
+        setLoading(false);
     };
 
     const onClickAddtoken = async () => {
@@ -48,18 +52,18 @@ export default function TokenMarket() {
 
     return (
         <div className="flex flex-col">
-            <div className="px-4 py-5 sm:px-6 flex flex-row justify-between">
-                <h3 className="text-lg font-medium leading-6 text-gray-900">
+            <div className="py-5 mx-16 flex flex-row justify-between">
+                <h3 className="text-lg font-medium leading-6 text-white">
                     Token Information
                 </h3>
                 <button
-                    className="mr-4 bg-green-500 border-none outline-none px-6 py-2 font-poppins font-bold text-lg text-white rounded-3xl leading-[24px] hover:bg-green-400 transition-all"
+                    className="bg-green-500 border-none outline-none px-6 py-2 font-poppins font-bold text-lg text-white rounded-3xl leading-[24px] hover:bg-green-400 transition-all"
                     onClick={onClickAddtoken}
                 >
                     Add Token
                 </button>
             </div>
-            <div className="flex flex-col">
+            <div className="flex flex-col bg-transparent">
                 {showAddToken && (
                     <AddTokenOverlay
                         nameChange={onTokenNameChange}
@@ -67,18 +71,25 @@ export default function TokenMarket() {
                         symbolChange={onTokenSymbolchange}
                         symbol={newTokenSymbol}
                         confirmAddToken={confirmAddToken}
-                        loading={addLoading}
+                        initialAmount={initialAmount}
+                        onInitialAmountChange={onInitialAmountChange}
+                        loading={loading}
                     />
                 )}
                 {loading ? (
                     <LoadingSpinner />
                 ) : (
-                    tokens &&
-                    tokens.map((token) => {
-                        return (
-                            <TokenInfo name={token.name} address={token.addr} />
-                        );
-                    })
+                    <div className="overflow-y-scrollable ">
+                        {tokens.length !== 0 ?
+                            tokens.map((token) => {
+                                return (
+                                    <TokenInfo
+                                        name={token.name}
+                                        address={token.addr}
+                                    />
+                                );
+                            }): <div className="flex text-white justify-center h-full">No tokens to be displayed</div>}
+                    </div>
                 )}
             </div>
         </div>

@@ -6,17 +6,7 @@ import LoadingSpinner from "../loading/LoadingSpinner";
 
 export default function AddTokenOverlay(props) {
     const [open, setOpen] = useState(true);
-    const [supply, setSupply] = useState("");
-    const [ownedSupply, setOwnedSupply] = useState("");
     const cancelButtonRef = useRef(null);
-
-    const handleSupplyChange = (event) => {
-        setSupply(event.target);
-    };
-
-    const handleOwnedSupplyChange = (event) => {
-        setOwnedSupply(event.target);
-    };
 
     return (
         <Transition.Root show={open} as={Fragment}>
@@ -49,39 +39,36 @@ export default function AddTokenOverlay(props) {
                             leaveFrom="opacity-100 translate-y-0 sm:scale-100"
                             leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                         >
-                            <Dialog.Panel className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-                                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                                    <div className="sm:flex sm:items-start justify-center">
-                                        {/* <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                      <ExclamationTriangleIcon className="h-6 w-6 text-red-600" aria-hidden="true" />
-                    </div> */}
+                            <Dialog.Panel className=" relative transform overflow-hidden rounded-lg text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                                <div className="bg-swapBlack px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                    <div className=" sm:flex sm:items-start justify-center">
                                         <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
                                             <Dialog.Title
                                                 as="h3"
-                                                className="text-lg font-medium leading-6 text-gray-900 text-center"
+                                                className="text-lg font-medium leading-6 text-white text-center"
                                             >
-                                                Add Your Token
+                                                Adding Your Token
                                             </Dialog.Title>
 
                                             {props.loading ? (
                                                 <LoadingSpinner />
                                             ) : (
                                                 // <div className="shadow sm:overflow-hidden sm:rounded-md">
-                                                <div className="space-y-6 bg-white px-4 py-5 sm:p-6">
+                                                <div className="space-y-6 px-4 py-5 sm:p-6">
                                                     <div className="grid grid-cols-3 gap-6">
                                                         <div className="col-span-3 sm:col-span-2">
                                                             <label
                                                                 htmlFor="company-website"
-                                                                className="block text-sm font-medium text-gray-700"
+                                                                className="block text-sm font-medium text-white"
                                                             >
                                                                 Token Name
                                                             </label>
-                                                            <div className="mt-1 flex rounded-md shadow-sm ">
+                                                            <div className="flex flex-row p-2 border-[1px] border-transparent hover:border-slate-600 rounded-md bg-slate-800">
                                                                 <input
                                                                     type="text"
                                                                     // name="company-website"
                                                                     // id="company-website"
-                                                                    className="block w-full flex-1 rounded-none rounded-r-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                                                    className="text-white block rounded-md outline-none pl-7 pr-12 bg-transparent sm:text-sm"
                                                                     placeholder="e.g. Doge Coin"
                                                                     value={
                                                                         props.name
@@ -97,16 +84,16 @@ export default function AddTokenOverlay(props) {
                                                         <div className="col-span-3 sm:col-span-2">
                                                             <label
                                                                 htmlFor="company-website"
-                                                                className="block text-sm font-medium text-gray-700"
+                                                                className="block text-sm font-medium text-white"
                                                             >
                                                                 Token Symbol
                                                             </label>
-                                                            <div className="mt-1 flex rounded-md shadow-sm">
+                                                            <div className="flex flex-row p-2 border-[1px] border-transparent hover:border-slate-600 rounded-md bg-slate-800">
                                                                 <input
                                                                     type="text"
                                                                     // name="company-website"
                                                                     // id="company-website"
-                                                                    className="block w-full flex-1 rounded-none rounded-r-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                                                    className="text-white block rounded-md outline-none pl-7 pr-12 bg-transparent sm:text-sm"
                                                                     placeholder="e.g. DOGE"
                                                                     value={
                                                                         props.symbol
@@ -118,53 +105,27 @@ export default function AddTokenOverlay(props) {
                                                             </div>
                                                         </div>
                                                     </div>
+
                                                     <div className="grid grid-cols-3 gap-6">
                                                         <div className="col-span-3 sm:col-span-2">
                                                             <label
                                                                 htmlFor="company-website"
-                                                                className="block text-sm font-medium text-gray-700"
+                                                                className="block text-sm font-medium text-white"
                                                             >
-                                                                Initial Total
-                                                                Supply
+                                                                Supply Amount
                                                             </label>
-                                                            <div className="mt-1 flex rounded-md shadow-sm">
+                                                            <div className="flex flex-row p-2 border-[1px] border-transparent hover:border-slate-600 rounded-md bg-slate-800">
                                                                 <input
                                                                     type="text"
                                                                     // name="company-website"
                                                                     // id="company-website"
-                                                                    className="block w-full flex-1 rounded-none rounded-r-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                                                    className="text-white block rounded-md outline-none pl-7 pr-12 bg-transparent sm:text-sm"
                                                                     placeholder="e.g. 1000000"
                                                                     value={
-                                                                        supply
+                                                                        props.initialAmount
                                                                     }
                                                                     onChange={
-                                                                        handleSupplyChange
-                                                                    }
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="grid grid-cols-3 gap-6">
-                                                        <div className="col-span-3 sm:col-span-2">
-                                                            <label
-                                                                htmlFor="company-website"
-                                                                className="block text-sm font-medium text-gray-700"
-                                                            >
-                                                                Your Owned
-                                                                Supply
-                                                            </label>
-                                                            <div className="mt-1 flex rounded-md shadow-sm">
-                                                                <input
-                                                                    type="text"
-                                                                    // name="company-website"
-                                                                    // id="company-website"
-                                                                    className="block w-full flex-1 rounded-none rounded-r-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                                                    placeholder="e.g. 1000000"
-                                                                    value={
-                                                                        ownedSupply
-                                                                    }
-                                                                    onChange={
-                                                                        handleOwnedSupplyChange
+                                                                        props.onInitialAmountChange
                                                                     }
                                                                 />
                                                             </div>
@@ -173,17 +134,10 @@ export default function AddTokenOverlay(props) {
                                                 </div>
                                                 // </div>
                                             )}
-                                            {/* <div className='w-full text-center'>
-                        <p>{props.message1}</p>
-                      </div>
-
-                      <div className='mt-2 w-full text-center text-gray-500'>
-                        <p>{props.message2}</p>
-                      </div> */}
                                         </div>
                                     </div>
                                 </div>
-                                <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 justify-center">
+                                <div className="bg-swapBlack px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 justify-center">
                                     {!props.loading && (
                                         <button
                                             type="button"

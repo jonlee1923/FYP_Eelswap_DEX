@@ -1,9 +1,9 @@
 import { Fragment, useRef, useState } from "react";
 import { Dialog, Transition } from "@headlessui/react";
-import LoadingSpinner from "./LoadingSpinner";
+// import LoadingSpinner from "./LoadingSpinner";
 // import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 
-export default function LoadingOverlay(props) {
+export default function ErrorOverlay(props) {
     const [open, setOpen] = useState(true);
 
     const cancelButtonRef = useRef(null);
@@ -29,7 +29,7 @@ export default function LoadingOverlay(props) {
                 </Transition.Child>
 
                 <div className="fixed inset-0 z-10 overflow-y-auto">
-                    <div className="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                    <div className="flex min-h-full justify-center p-4 text-center items-center sm:p-0">
                         <Transition.Child
                             as={Fragment}
                             enter="ease-out duration-300"
@@ -49,15 +49,9 @@ export default function LoadingOverlay(props) {
                                             >
                                                 {props.title}
                                             </Dialog.Title>
-                                            <div className="my-4 mx-8 sm:mx-0">
-                                                {/* {props.loading && ( */}
-                                                    <LoadingSpinner
-                                                        height={10}
-                                                    />
-                                                {/* )} */}
-                                            </div>
+                                            <div className="mt-2"></div>
 
-                                            <div className="w-full text-center">
+                                            <div className="w-full text-center text-sm">
                                                 <p>{props.message1}</p>
                                             </div>
 
@@ -67,8 +61,18 @@ export default function LoadingOverlay(props) {
                                         </div>
                                     </div>
                                 </div>
-                                {/* <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 justify-center">
-                                </div> */}
+                                <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 justify-center">
+                                    <button
+                                        type="button"
+                                        className="inline-flex w-full justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm"
+                                        onClick={() => {
+                                            setOpen(false);
+                                            props.setError("");
+                                        }}
+                                    >
+                                        Ok
+                                    </button>
+                                </div>
                             </Dialog.Panel>
                         </Transition.Child>
                     </div>

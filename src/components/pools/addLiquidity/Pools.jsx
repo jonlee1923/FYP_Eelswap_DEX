@@ -3,14 +3,15 @@ import React, { useContext, useState, useEffect } from "react";
 import { EelswapContext } from "../../../context/EelswapContext";
 import DepositAmount1 from "./DepositAmount1";
 import DepositAmount2 from "./DepositAmount2";
-import Token1 from "./Token1";
-import Token2 from "./Token2";
+// import Token1 from "./Token1";
+// import Token2 from "./Token2";
 import Balance1 from "./Balance1";
 import Balance2 from "./Balance2";
-import LoadingSpinner from "../../loading/LoadingSpinner";
 import LoadingOverlay from "../../loading/LoadingOverlay";
 import { WETH } from "../../../utils/helpers";
 import Settings from "../../settings/Settings";
+import Tokens1 from "./Tokens1";
+import ErrorOverlay from "../../error/ErrorOverlay";
 
 export default function Pools(props) {
     const {
@@ -33,19 +34,39 @@ export default function Pools(props) {
     const [token1Name, setToken1Name] = useState("");
     const [token2Name, setToken2Name] = useState("");
     const [showSettings, setShowSettings] = useState(false);
+
+    const [error, setError] = useState(false);
+    const [slippage, setSlippage] = useState("");
+    const [deadline, setDeadline] = useState("");
+    const [imageUrl1, setImageUrl1] = useState("");
+    const [imageUrl2, setImageUrl2] = useState("");
+
+
+    const onSlippageChange = async (event) => {
+        setSlippage(event.target.value);
+    };
+
+    const onDeadlineChange = async (event) => {
+        setDeadline(event.target.value);
+    };
     const toggleSettings = () => {
         setShowSettings(!showSettings);
     };
-    let availableTokens = getAvailableTokens(props.pools);
-    let counterpartTokens = getCounterpartTokens(props.pools, token1);
+    // let availableTokens = getAvailableTokens(props.pools);
+    // let counterpartTokens = getCounterpartTokens(props.pools, token1);
     let pairAddress = "";
 
+    const getTimestampInSeconds = () => {
+        const now = new Date();
+        return Math.floor(now.getTime() / 1000);
+    };
+
     useEffect(() => {
-        if (props.pools.length !== 0) {
-            setToken1(props.pools[0].token0Address);
-            pairAddress =
-                findPoolByTokens(props.pools, token1, token2)?.address ?? "";
-        }
+        // if (props.pools.length !== 0) {
+        //     setToken1(props.pools[0].token0Address);
+        //     pairAddress =
+        //         findPoolByTokens(props.pools, token1, token2)?.address ?? "";
+        // }
     }, []);
 
     const token1Change = (value) => {
@@ -77,11 +98,38 @@ export default function Pools(props) {
             console.log("amount1: " + amount1);
             console.log("amount2: " + amount2);
             console.log("connected: " + connected);
-            // let amount1Int = parseInt(amount1);
-            // let amount2Int = parseInt(amount2);
+
+            if (token1 === token2) {
+                setError(
+                    "The same token cannot be used, please choose another token"
+                );
+
+                throw new Error();
+            }
+            let currentTime = getTimestampInSeconds();
+
+            let defaultSlippage = 50;
+            let defaultDeadline = 10;
+            let finalDeadline
+
+            console.log(slippage, deadline)
+            
+            if (deadline === "") {
+                currentTime += parseInt(defaultDeadline) * 60;
+                console.log(currentTime);
+                finalDeadline = currentTime
+            } else {
+                currentTime += parseInt(deadline) * 60;
+                console.log(currentTime);
+                finalDeadline = currentTime
+            }
 
             let dict;
-
+            let finalSlippage
+            
+            if (slippage === "") {
+                finalSlippage = defaultSlippage
+            }
             if (token1 === WETH || token2 === WETH) {
                 if (token1 === WETH) {
                     let token = token2;
@@ -91,71 +139,122 @@ export default function Pools(props) {
                         token,
                         amountInput,
                         amountInputETH,
-                        1671815772
+                        Math.floor(((100 - finalSlippage) / 100) * amountInput),
+                        Math.floor(((100 - finalSlippage) / 100) * amountInputETH),
+                        finalDeadline
                     );
                 } else {
                     let token = token1;
                     let amountInput = amount1;
                     let amountInputETH = amount2;
+                    console.log(Math.floor(((100 - finalSlippage) / 100) * amountInputETH),)
                     dict = await addLiquidityETH(
                         token,
                         amountInput,
                         amountInputETH,
-                        1671815772
+                        Math.floor(((100 - finalSlippage) / 100) * amountInput),
+                        Math.floor(((100 - finalSlippage) / 100) * amountInputETH),
+                        finalDeadline
                     );
                 }
             } else {
+                console.log(Math.floor(((100 - finalSlippage) / 100) * amount1))
                 dict = await addLiquidity(
                     token1,
                     token2,
                     amount1,
                     amount2,
-                    connected,
-                    1671641174
+                    // 1,1,
+                    Math.floor(((100 - finalSlippage) / 100) * amount1),
+                    Math.floor(((100 - finalSlippage) / 100) * amount2),
+                    finalDeadline
                 );
             }
-            updateOrAdd(dict);
+            await updateOrAdd(dict);
+            // await updateOrAdd({});
+
             setLoading(false);
             setToken2("");
             setAmount1("");
             setAmount2("");
+            setDeadline("");
+            setSlippage("")
         } catch (err) {
             setLoading(false);
+            setDeadline("");
+            setSlippage("")
+            setError(true)
             console.log(err);
         }
     };
 
+    const checkIfPositionExists = async (dict) => {
+        const response = await fetch("/.netlify/functions/getPosition", {
+            method: "POST",
+            body: dict,
+        });
+
+        const responseBody = await response.json();
+        console.log(responseBody.data.liquidityPositions.values[0])
+        return responseBody.data.liquidityPositions.values[0]
+        // console.log(responseBody.data.positions.values[0]);
+        // return responseBody.data.positions.values[0];
+    };
+
     const updateOrAdd = async (dict) => {
-        let liquidity = await getLiquidityAmt(dict["pairAddress"]);
-        dict["liquidity"] = liquidity;
-        dict["token1Address"] = token1;
-        dict["token2Address"] = token2;
+        let newdict = { address: connected, pairAddress: dict["pairAddress"] };
+        // let newdict = { address: connected, pairAddress: "0xcf876bEf1A443c7Ae820018Cb8ABd0ac05819d05" };
+        // console.log(checkIfPositionExists(JSON.stringify(newdict)))
+        console.log(dict);
+        let position = await checkIfPositionExists(JSON.stringify(newdict));
+        let finalOpen = position["open"]
 
-        const now = new Date();
-        let date = now.toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-        });
-        date = date.replace(/\//g, "-");
-        date = date.slice(6, 10) + "-" + date.slice(0, 3) + date.slice(3, 5);
-        const time = now.toLocaleTimeString("en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: false,
-        });
+        if(position["liquidity"] + dict["liquidity"] > 0){
+            finalOpen = true
+        }
 
-        dict["time"] = time;
-        dict["date"] = date;
-        dict["open"] = true;
+        if (position !== null && position !== undefined) {
+            console.log("update");
+            let updateDict = {
+                address: connected,
+                pairAddress: position["pairAddress"],
+                liquidity: position["liquidity"] + dict["liquidity"],
+                token1Amount: position["token1Amount"] + dict["token1Amount"],
+                token2Amount: position["token2Amount"] + dict["token2Amount"],
+                open: finalOpen,
+            };
+            updateData(JSON.stringify(updateDict));
+        } else {
+            console.log("ADD");
+            let liquidity = await getLiquidityAmt(dict["pairAddress"]);
+            dict["liquidity"] = liquidity;
+            dict["token1Address"] = token1;
+            dict["token2Address"] = token2;
+            dict["open"] = true;
 
-        console.log(JSON.stringify(dict));
-        fetchData(JSON.stringify(dict));
+            // add imageurl here
+            dict["token1ImageUrl"] = imageUrl1
+            dict["token2ImageUrl"] = imageUrl2
+            console.log(dict)
+            console.log(JSON.stringify(dict));
+            fetchData(JSON.stringify(dict));
+            setSlippage("")
+            setDeadline("")
+        }
     };
 
     const fetchData = async (dict) => {
         const response = await fetch("/.netlify/functions/addPositions", {
+            method: "POST",
+            body: dict,
+        });
+
+        const responseBody = await response.json();
+        console.log(responseBody.data);
+    };
+
+    const updateData = async (dict) => {
+        const response = await fetch("/.netlify/functions/updatePosition", {
             method: "POST",
             body: dict,
         });
@@ -173,39 +272,22 @@ export default function Pools(props) {
         />
     ) : (
         <div className="flex flex-col">
-            <div className="pt-6 flex flex-row text-white justify-end">
-                <button onClick={toggleSettings}>
-                    <svg
-                        className="w-6 h-6"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                        />
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                    </svg>
-                </button>
-            </div>
-            <div className="mx-10 flex flex-row justify-center ">
+            <div className="pt-6 flex flex-row text-white justify-end mr-48"></div>
+            <div className="mx-10 flex flex-row justify-center">
                 <div className=" mr-5 flex flex-col">
                     <div className="my-5">
-                        <Token1
+                        <Tokens1
                             token={token1}
                             onTokenChange={token1Change}
                             setToken={setToken1}
-                            availableTokens={availableTokens}
                             setTokenName={setToken1Name}
+                            amount={amount1}
+                            loading={loading}
+                            setLoading={setLoading}
+                            activeChain={props.activeChain}
+                            setActiveChain={props.setActiveChain}
+                            setImageUrl={setImageUrl1}
+
                         />
                     </div>
                     <div className="my-5">
@@ -217,14 +299,44 @@ export default function Pools(props) {
 
                     <Balance1 token={token1} />
                 </div>
-                <div className="ml-5 flex flex-col">
-                    <div className="my-5">
-                        <Token2
+                <div className="ml-5 flex flex-col justify-start">
+                    <div className="my-5 flex justify-between mr-2">
+                        <Tokens1
                             token={token2}
                             onTokenChange={token2Change}
-                            counterpartTokens={counterpartTokens}
+                            setToken={() => {}}
                             setTokenName={setToken2Name}
+                            amount={amount2}
+                            loading={loading}
+                            setLoading={setLoading}
+                            activeChain={props.activeChain}
+                            setActiveChain={props.setActiveChain}
+                            setImageUrl={setImageUrl2}
                         />
+                        <div className="flex text-white items-center">
+                            <button onClick={toggleSettings}>
+                                <svg
+                                    className="w-6 h-6"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                                    />
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                     <div className="my-5">
                         <DepositAmount2
@@ -240,10 +352,10 @@ export default function Pools(props) {
                 <Settings
                     show={showSettings}
                     toggleShow={toggleSettings}
-                    // deadline={deadline}
-                    // slippage={slippage}
-                    // onDeadlineChange={onDeadlineChange}
-                    // onSlippageChange={onSlippageChange}
+                    deadline={deadline}
+                    slippage={slippage}
+                    onDeadlineChange={onDeadlineChange}
+                    onSlippageChange={onSlippageChange}
                 />
             )}
 
@@ -257,6 +369,15 @@ export default function Pools(props) {
                     Add Liquidity
                 </button>
             </div>
+
+            {error && (
+                <ErrorOverlay
+                    title="Error"
+                    message1={error}
+                    message2="Please try again"
+                    setError={setError}
+                />
+            )}
         </div>
     );
 }

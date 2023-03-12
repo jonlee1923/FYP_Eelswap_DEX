@@ -5,6 +5,8 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        goerli: "rgb(80, 200, 120)",
+        bsc: "rgb(255, 195, 0)",
         sitedim: "rgba(255, 255, 255, 0.02)",
         sitedim2: "rgba(255, 255, 255, 0.13)",
         swapBlack: "#1F1D2B",

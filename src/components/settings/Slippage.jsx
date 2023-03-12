@@ -5,18 +5,17 @@ export default function Slippage(props) {
         <div className="m-2">
             <label
                 htmlFor="price"
-                className="justify-start block text-sm font-medium text-gray-700"
+                className="justify-start block text-sm font-medium"
             >
                 Slippage Tolerance
             </label>
             <div className="relative mt-1 rounded-md ">
-
-                <div className="flex flex-row">
+                <div className="flex flex-row p-2 border-[1px] border-transparent hover:border-slate-600 rounded-md bg-slate-800">
                     <input
                         type="text"
                         name="time"
                         id="time"
-                        className="shadow-sm block  rounded-md border-gray-300 pl-7 pr-12 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        className=" block rounded-md outline-none pl-7 pr-12 bg-transparent sm:text-sm"
                         placeholder="0.10"
                         onChange={props.onSlippageChange}
                         value={props.slippage}

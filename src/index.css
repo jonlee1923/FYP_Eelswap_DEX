@@ -151,3 +151,7 @@ code {
   background: rgba(255, 255, 255, 0.6);
   filter: blur(750px);
 }
+
+html, body {
+  background-color: #00000000; /* replace with your desired background color */
+}

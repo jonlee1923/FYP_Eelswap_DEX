@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import pairObj from "../contractsData/pair.json";
 import token from "../contractsData/token.json";
+import bscToken from "../contractsData/BscToken.json";
 import WETHObj from "../contractsData/WETH.json";
 import IrouterAbi from "../contractsData/IEelswapRouter.json";
 import routerAbi from "../contractsData/EelswapRouter.json";
@@ -10,16 +11,18 @@ import factoryAbi from "../contractsData/EelswapFactory.json";
 import factoryAddress from "../contractsData/EelswapFactory-address.json";
 import tokenMarketAbi from "../contractsData/TokenMarket.json";
 import tokenMarketAddress from "../contractsData/TokenMarket-address.json";
-import bridgeAbi from "../contractsData/BridgeEth.json";
-import bridgeAddress from "../contractsData/BridgeEth-address.json";
+import ethBridgeAbi from "../contractsData/BridgeEth.json";
+import ethBridgeAddress from "../contractsData/BridgeEth-address.json";
+import bscBridgeAbi from "../contractsData/BscBridge.json";
+import bscBridgeAddress from "../contractsData/BscBridge-address.json";
 
 import { WETH } from "../utils/helpers";
-// import std from "../utils/constant.js";
+
 export const EelswapContext = React.createContext();
 
 const { ethereum } = window;
 
-const getBridgeContract = async () => {
+const getEthBridgeContract = async () => {
     const provider = new ethers.providers.Web3Provider(ethereum);
     const accounts = await ethereum.request({ method: "eth_accounts" });
     if (accounts) {
@@ -27,8 +30,25 @@ const getBridgeContract = async () => {
 
         if (signer) {
             const bridge = new ethers.Contract(
-                bridgeAddress.address,
-                bridgeAbi.abi,
+                ethBridgeAddress.address,
+                ethBridgeAbi.abi,
+                signer
+            );
+            return bridge;
+        }
+    }
+};
+
+const getBscBridgeContract = async () => {
+    const provider = new ethers.providers.Web3Provider(ethereum);
+    const accounts = await ethereum.request({ method: "eth_accounts" });
+    if (accounts) {
+        const signer = provider.getSigner(accounts[0]);
+
+        if (signer) {
+            const bridge = new ethers.Contract(
+                bscBridgeAddress.address,
+                bscBridgeAbi.abi,
                 signer
             );
             return bridge;
@@ -89,8 +109,42 @@ const getTokenMarketContract = async () => {
     }
 };
 
+
+
 export const EelswapProvider = ({ children }) => {
     const [connected, setCurrentAccount] = useState("");
+    const [activeChain, setActiveChain] = useState("ETH");
+
+    useEffect(() => {
+        checkChainId()
+        
+    }, [])
+
+    const checkChainId = async ( ) => {
+        let chainId = await ethereum.request({ method: 'eth_chainId' })
+        chainId = parseInt(chainId, 16)
+        console.log(chainId)
+        if (chainId === 5){
+            setActiveChain("ETH")
+        } else{
+            setActiveChain("BSC")
+        }
+        
+    }
+    const chainSwitcher = async (chainId) => {
+        try {
+            let value = Number(chainId).toString(16);
+            if (!window.ethereum) throw new Error("No crypto wallet found");
+            await window.ethereum.request({
+                method: "wallet_switchEthereumChain",
+                params: [{ chainId: `0x${value}` }],
+            });
+            if (chainId === 97) setActiveChain("BSC");
+            else if (chainId === 5) setActiveChain("ETH");
+        } catch (err) {
+            console.log(err);
+        }
+    };
 
     const checkIfWalletIsConnected = async () => {
         try {
@@ -124,10 +178,10 @@ export const EelswapProvider = ({ children }) => {
         }
     };
 
-    const addToken = async (name, symbol) => {
+    const addToken = async (name, symbol, amount) => {
         try {
             let tokenMarketContract = await getTokenMarketContract();
-            let tx = await tokenMarketContract.addToken(name, symbol);
+            let tx = await tokenMarketContract.addToken(name, symbol, amount);
             await tx.wait();
         } catch (error) {
             console.log(error);
@@ -162,10 +216,14 @@ export const EelswapProvider = ({ children }) => {
             const provider = new ethers.providers.Web3Provider(ethereum);
 
             let factoryContract = await getFactoryContract();
+            // const { connectedAdminFactoryContract } = await getAdminNetwork();
+            // let factoryContract = connectedAdminFactoryContract;
+            // console.log("hash",initHash)
             let allPairs = [];
             let pairsInfo = [];
 
             let length = await factoryContract.allPairsLength();
+            // console.log(length);
             length = length.toNumber();
 
             if (length === 0) {
@@ -269,14 +327,31 @@ export const EelswapProvider = ({ children }) => {
         // return tx.data;
     };
 
-    const addLiquidity = async (token1, token2, amount1, amount2, deadline) => {
+    const addLiquidity = async (
+        token1,
+        token2,
+        amount1,
+        amount2,
+        minAmount1,
+        minAmount2,
+        deadline
+    ) => {
+        console.log(
+            token1,
+            token2,
+            amount1,
+            amount2,
+            minAmount1,
+            minAmount2,
+            deadline
+        );
         const provider = new ethers.providers.Web3Provider(ethereum);
         const accounts = await ethereum.request({ method: "eth_accounts" });
         const signer = provider.getSigner(accounts[0]);
         let routerContract = await getRouterContract();
         const token0Contract = new ethers.Contract(token1, token.abi, signer);
         const token1Contract = new ethers.Contract(token2, token.abi, signer);
-
+        console.log(routerContract.address)
         await token0Contract.approve(routerContract.address, amount1);
         await token1Contract.approve(routerContract.address, amount2);
 
@@ -285,8 +360,9 @@ export const EelswapProvider = ({ children }) => {
             token2,
             amount1,
             amount2,
-            1,
-            1,
+            1,1,
+            // minAmount1,
+            // minAmount2,
             connected,
             deadline,
             {
@@ -295,14 +371,16 @@ export const EelswapProvider = ({ children }) => {
         );
 
         let tx = await transaction.wait();
-
+        console.log(tx.events)
         let dict = {
             address: connected,
-            pairAddress: tx.events[7].args[0],
-            token1Amount: tx.events[7].args[1].toNumber(),
-            token2Amount: tx.events[7].args[2].toNumber(),
+            pairAddress: tx.events[9].args[0],
+            liquidity: tx.events[9].args[1],
+            token1Amount: tx.events[9].args[2].toNumber(),
+            token2Amount: tx.events[9].args[3].toNumber(),
         };
 
+        // console.log("events 0", tx.events[7]);
         // console.log("events 0", tx.events[7].args[0]);
         // console.log("events 1", tx.events[7].args[1].toNumber());
         // console.log("events 2", tx.events[7].args[2].toNumber());
@@ -313,9 +391,9 @@ export const EelswapProvider = ({ children }) => {
     const addLiquidityETH = async (
         inputToken,
         amountInput,
-        // minAmountInput,
         amountInputETH,
-        // minAmountInputETH,
+        minAmountInput,
+        minAmountInputETH,
         deadline
     ) => {
         const provider = new ethers.providers.Web3Provider(ethereum);
@@ -341,8 +419,8 @@ export const EelswapProvider = ({ children }) => {
         let transaction = await routerContract.addLiquidityETH(
             inputToken,
             amountInput,
-            1,
-            1,
+            minAmountInput,
+            minAmountInputETH,
             connected,
             deadline,
             {
@@ -364,9 +442,13 @@ export const EelswapProvider = ({ children }) => {
         toToken,
         amountIn,
         amountOutMin,
-        deadline
+        deadline,
+        to
     ) => {
+        console.log("calc", amountOutMin, deadline);
+
         try {
+            console.log(fromToken, toToken, amountIn, amountOutMin, deadline);
             const provider = new ethers.providers.Web3Provider(ethereum);
             const accounts = await ethereum.request({ method: "eth_accounts" });
             const signer = provider.getSigner(accounts[0]);
@@ -382,15 +464,17 @@ export const EelswapProvider = ({ children }) => {
                 amountIn,
                 amountOutMin,
                 [fromToken, toToken],
-                connected,
+                to,
                 deadline,
                 {
-                    gasLimit: ethers.BigNumber.from("3000000"),
+                    gasLimit: ethers.BigNumber.from("4000000"),
                 }
             );
-            let tx = transaction.wait();
+            let tx = await transaction.wait();
+            console.log(tx.events[5].args["amountOut"].toNumber());
+            return tx.events[5].args["amountOut"].toNumber();
         } catch (error) {
-            console.log(error);
+            throw error;
         }
     };
 
@@ -398,7 +482,8 @@ export const EelswapProvider = ({ children }) => {
         toToken,
         amountInputETH,
         amountOutMin,
-        deadline
+        deadline,
+        to
     ) => {
         try {
             const provider = new ethers.providers.Web3Provider(ethereum);
@@ -416,7 +501,7 @@ export const EelswapProvider = ({ children }) => {
             let transaction = await routerContract.swapExactETHForTokens(
                 amountOutMin,
                 [WETH, toToken],
-                connected,
+                to,
                 deadline,
                 {
                     value: ethers.utils.parseEther(amountInputETH.toString()),
@@ -425,7 +510,7 @@ export const EelswapProvider = ({ children }) => {
             );
             let tx = transaction.wait();
         } catch (error) {
-            console.log(error);
+            throw error;
         }
     };
 
@@ -433,7 +518,8 @@ export const EelswapProvider = ({ children }) => {
         fromToken,
         amountIn,
         amountOutMin,
-        deadline
+        deadline,
+        to
     ) => {
         try {
             const provider = new ethers.providers.Web3Provider(ethereum);
@@ -452,7 +538,7 @@ export const EelswapProvider = ({ children }) => {
                 amountIn,
                 amountOutMin,
                 [fromToken, WETH],
-                connected,
+                to,
                 deadline,
                 {
                     gasLimit: ethers.BigNumber.from("3000000"),
@@ -460,7 +546,40 @@ export const EelswapProvider = ({ children }) => {
             );
             let tx = transaction.wait();
         } catch (error) {
-            console.log(error);
+            throw error;
+        }
+    };
+
+    const getInputAmount = async (amountOut, fromToken, toToken) => {
+        try {
+            console.log(amountOut);
+            console.log( fromToken );
+            console.log( toToken);
+            if (amountOut !== 0 && fromToken !== "" && toToken !== "") {
+                // console.log("insied if");
+                const provider = new ethers.providers.Web3Provider(ethereum);
+                const accounts = await ethereum.request({
+                    method: "eth_accounts",
+                });
+                const signer = provider.getSigner(accounts[0]);
+                let routerContract = await getRouterContract();
+
+                let value = await routerContract.getAmountsIn(amountOut, [
+                    fromToken,
+                    toToken,
+                ]);
+
+                // console.log("waiting")
+                // let tx = transaction.wait();
+                // console.log(value[1].toString());
+                if (toToken === WETH) {
+                    return ethers.utils.formatEther(value[0].toString());
+                }
+                console.log(value)
+                return value[0].toString();
+            }
+        } catch (error) {
+            console.log(error.message)
         }
     };
 
@@ -555,6 +674,16 @@ export const EelswapProvider = ({ children }) => {
             );
 
             let tx = await transaction.wait();
+            // console.log(tx.events)
+            console.log(tx.events[6].args["amount1"].toNumber());
+            console.log(tx.events[6].args["amount2"].toNumber());
+            console.log(tx.events[6].args["pair"]);
+
+            return [
+                tx.events[6].args["amount1"].toNumber(),
+                tx.events[6].args["amount2"].toNumber(),
+                tx.events[6].args["pair"],
+            ];
         } catch (error) {
             console.log(error);
         }
@@ -587,20 +716,145 @@ export const EelswapProvider = ({ children }) => {
             );
 
             let tx = await transaction.wait();
-        } catch (error) {}
+            console.log(tx.events);
+        } catch (error) {
+            throw error;
+        }
     };
 
-    const signMessage = async () => {
+    const signMessage = async (amount) => {
         // const sig = await owner.signMessage(ethers.utils.arrayify(hash))
-        const bridge = await getBridgeContract();
+        const bridge = await getEthBridgeContract();
         const provider = new ethers.providers.Web3Provider(ethereum);
         const accounts = await ethereum.request({ method: "eth_accounts" });
         const signer = provider.getSigner(accounts[0]);
-        const hash = await bridge.getMessageHash(connected, 10, 1);
+        const hash = await bridge.getMessageHash(connected, amount, 1);
         console.log("hash", hash);
         const sig = await signer.signMessage(ethers.utils.arrayify(hash));
         console.log("signature", sig);
         return sig;
+    };
+
+    const lockBscToken = async (tokenAddress, amount, symbol) => {
+        try {
+            console.log(tokenAddress, amount);
+            const bridge = await getBscBridgeContract();
+            const provider = new ethers.providers.Web3Provider(ethereum);
+            const accounts = await ethereum.request({ method: "eth_accounts" });
+            const signer = provider.getSigner(accounts[0]);
+            const bscTokenContract = new ethers.Contract(
+                tokenAddress,
+                bscToken.abi,
+                signer
+            );
+            await bscTokenContract.approve(bscBridgeAddress.address, amount);
+            const hash = await bridge.getMessageHash(connected, amount, 1);
+            const sig = await signer.signMessage(ethers.utils.arrayify(hash));
+            let transaction = await bridge.lock(
+                connected,
+                symbol,
+                tokenAddress,
+                amount,
+                sig,
+                {
+                    gasLimit: ethers.BigNumber.from("4000000"),
+                }
+            );
+            let tx = await transaction.wait();
+            console.log(tx);
+            console.log(tx.events[2].args);
+        } catch (err) {
+            throw err;
+        }
+    };
+
+    const getBscTokenSymbol = async (tokenAddress) => {
+        try {
+            const provider = new ethers.providers.Web3Provider(ethereum);
+            const accounts = await ethereum.request({ method: "eth_accounts" });
+            const signer = provider.getSigner(accounts[0]);
+            const bscTokenContract = new ethers.Contract(
+                tokenAddress,
+                bscToken.abi,
+                signer
+            );
+            const symbol = await bscTokenContract.symbol();
+            return symbol;
+        } catch (err) {
+            throw err;
+        }
+    };
+
+    const getEthTokenSymbol = async (tokenAddress) => {
+        try {
+            const provider = new ethers.providers.Web3Provider(ethereum);
+            const accounts = await ethereum.request({ method: "eth_accounts" });
+            const signer = provider.getSigner(accounts[0]);
+            const bscTokenContract = new ethers.Contract(
+                tokenAddress,
+                token.abi,
+                signer
+            );
+            const symbol = await bscTokenContract.symbol();
+            return symbol;
+        } catch (err) {
+            throw err;
+        }
+    };
+
+    const lockedBscTokenAmt = async (tokenAddress) => {
+        try {
+            const bridge = await getBscBridgeContract();
+            const provider = new ethers.providers.Web3Provider(ethereum);
+            const accounts = await ethereum.request({ method: "eth_accounts" });
+            const signer = provider.getSigner(accounts[0]);
+            const amt = await bridge.lockedTokens(connected, tokenAddress);
+            console.log(amt.toNumber());
+        } catch (err) {
+            throw err;
+        }
+    };
+
+    const getWrappedBscTokenAddress = async (tokenAddress) => {
+        try {
+            const bridge = await getEthBridgeContract();
+            const getWrappedBscTokenAddress = await bridge.bscToEth(
+                tokenAddress
+            );
+            console.log(getWrappedBscTokenAddress);
+            return getWrappedBscTokenAddress;
+        } catch (error) {
+            throw error;
+        }
+    };
+
+    const getWrappedBscTokenAddressETH = async (tokenAddress) => {
+        try {
+            const bridge = await getEthBridgeContract();
+            const getWrappedBscTokenAddress = await bridge.ethToBsc(
+                tokenAddress
+            );
+            console.log(getWrappedBscTokenAddress);
+            return getWrappedBscTokenAddress;
+        } catch (error) {
+            throw error;
+        }
+    };
+
+    const burnWrappedTokens = async (tokenAddress, amount) => {
+        try {
+            const bridge = await getEthBridgeContract();
+            const provider = new ethers.providers.Web3Provider(ethereum);
+            const accounts = await ethereum.request({ method: "eth_accounts" });
+            const signer = provider.getSigner(accounts[0]);
+            const sig = await signer.signMessage(ethers.utils.arrayify(amount));
+            console.log("signature", sig);
+            console.log(tokenAddress, amount);
+            await bridge.burn(tokenAddress, amount, 1, sig);
+            console.log("done burning wrapped tokens");
+        } catch (err) {
+            throw err;
+        }
     };
 
     useEffect(() => {
@@ -613,6 +867,9 @@ export const EelswapProvider = ({ children }) => {
                 connectWallet,
                 checkIfWalletIsConnected,
                 connected,
+                activeChain,
+                setActiveChain,
+                chainSwitcher,
                 //FUNCTIONS
                 // SWAP,
                 swapExactTokensForTokens,
@@ -630,14 +887,23 @@ export const EelswapProvider = ({ children }) => {
                 //Helpers
                 getTokenBalance,
                 getOutputAmount,
+                getInputAmount,
                 //Market
                 getAvailTokens,
                 addToken,
                 //Pair functions
                 getLiquidityAmt,
                 getPairSymbols,
-
+                getEthTokenSymbol,
                 signMessage,
+                //bridge
+                getBscBridgeContract,
+                lockBscToken,
+                lockedBscTokenAmt,
+                getWrappedBscTokenAddress,
+                getBscTokenSymbol,
+                burnWrappedTokens,
+                getWrappedBscTokenAddressETH,
             }}
         >
             {children}

@@ -16,7 +16,8 @@ const styles = {
     marginX: "sm:mx-16 mx-6",
     marginY: "sm:my-16 my-6",
 
-    connectButton: "mr-4 bg-green-500 border-none outline-none px-6 py-2 font-poppins font-bold text-lg text-white rounded-3xl leading-[24px] hover:bg-green-400 transition-all",
+    connectButton:
+        "mr-4 bg-green-500 border-none outline-none p-6 py-2 font-poppins font-bold text-sm sm:text-lg text-white rounded-3xl leading-[24px] hover:bg-green-400 transition-all",
 
     amountContainer:
         "flex justify-between items-center flex-row w-full min-w-full bg-slate-800 border-[1px] border-transparent hover:border-slate-600 min-h-[96px] sm:p-8 p-4 rounded-[20px]",
@@ -35,9 +36,18 @@ const styles = {
     currencyButton:
         "flex flex-row items-center bg-site-dim2 py-2 px-4 rounded-xl font-poppins font-bold text-white",
     currencyList:
-        "absolute z-10 right-0 bg-site-black border-[1px] border-site-dim2 w-full mt-2 rounded-lg min-w-[170px] overflow-hidden",
+        "absolute z-10 right-0 bg-site-black border-[1px] border-t-0 border-site-dim2 w-full rounded-b-lg min-w-[170px] overflow-y-scroll overflow-hidden max-h-48",
     currencyListItem:
         "font-poppins font-medium text-base text-white hover:text-dim-white px-5 py-3 hover:bg-site-dim2 cursor-pointer",
+    ETHStyle:
+        "pb-24 w-screen h-full lg:h-screen bg-gradient-to-br from-green-400 via-black to-green-800 w-full overflow-y-scroll",
+    BSCStyle:
+        "pb-24 w-screen h-full lg:h-screen bg-gradient-to-br from-yellow-400 via-black to-yellow-800 w-full overflow-y-scroll",
+    paymentList:
+        "absolute z-10 right-0 bg-site-black border-[1px] border-t-0 border-site-dim2 w-full rounded-b-lg min-w-[170px] overflow-y-scroll overflow-hidden max-h-48",
+
+    paymentListItem:
+        "w-auto font-poppins font-medium text-base text-white hover:text-dim-white px-5 py-3 hover:bg-site-dim2 cursor-pointer",
 };
 
 export const layout = {

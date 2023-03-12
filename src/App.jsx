@@ -1,5 +1,5 @@
 import "./App.css";
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import styles from "./styles.js";
 import Navbar from "./components/navigation/Navbar";
 import Swap from "./components/swap/Swap";
@@ -11,36 +11,86 @@ import { EelswapContext } from "./context/EelswapContext";
 // import LoadingSpinner from "./components/loading/LoadingSpinner";
 import LoadingOverlay from "./components/loading/LoadingOverlay";
 import ConnectWallet from "./components/navigation/ConnectWallet";
-import Payment from "./components/payment/Payment";
 import TokenMarket from "./components/testTokens/TokenMarket";
 import LandingPage from "./components/landingPage/LandingPage";
+import NetworkSwitcher from "./components/pools/addLiquidity/NetworkSwitcher";
+import Tokens1 from "./components/pools/addLiquidity/Tokens1";
+import PaymentLink from "./components/payment/paymentLink/PaymentLink";
+import PaymentTerminal from "./components/payment/paymentTerminal/PaymentTerminal";
+import SuccessOverlay from "./components/loading/SuccessOverlay";
 
 function App() {
     const [poolsLoading, pools] = usePools();
-    const { connected } = useContext(EelswapContext);
-
+    const { connected, activeChain, setActiveChain } =
+        useContext(EelswapContext);
     return (
-        <BrowserRouter>
-            <Navbar />
-            {connected ? (
-                poolsLoading ? (
-                    <LoadingOverlay loading={poolsLoading} title={"Loading"} />
-                ) : (
-                    <Routes>
-                        <Route path="/" element={<LandingPage />} />
-                        <Route path="/swap" element={<Swap pools={pools} />} />
-                        <Route
-                            path="/pools"
-                            element={<PoolPositions pools={pools} />}
+        <div
+            className={
+                activeChain === "ETH"
+                    ? `${styles.ETHStyle}`
+                    : `${styles.BSCStyle}`
+            }
+        >
+            <BrowserRouter>
+                <Navbar
+                    activeChain={activeChain}
+                    setActiveChain={setActiveChain}
+                />
+                {connected ? (
+                    poolsLoading ? (
+                        <LoadingOverlay
+                            loading={poolsLoading}
+                            title={"Loading"}
                         />
-                        <Route path="/payment" element={<Payment />} />
-                        <Route path="/getTokens" element={<TokenMarket />} />
-                    </Routes>
-                )
-            ) : (
-                <ConnectWallet />
-            )}
-        </BrowserRouter>
+                    ) : (
+                        // <LoadingOverlay
+                        //     loading={poolsLoading}
+                        //     title={"Loading"}
+                        // />
+                        // <SuccessOverlay
+                        //     title={
+                        //         "Please wait for your transaction to complete"
+                        //     }
+                        //     // loading={loading}
+                        //     message1={`Successfully swapped 15 aave tokens for 9 usdc tokens`}
+                        //     message2={``}
+                        //     setShowEndMsg={true}
+                        // />
+                        <Routes>
+                            <Route path="/" element={<LandingPage />} />
+                            <Route
+                                path="/swap"
+                                element={<Swap pools={pools} />}
+                            />
+                            <Route
+                                path="/pools"
+                                // element={<PoolPositions pools={pools} />}
+                                element={
+                                    <PoolPositions
+                                        activeChain={activeChain}
+                                        setActiveChain={setActiveChain}
+                                    />
+                                }
+                            />
+                            <Route
+                                path="/paymentLink"
+                                element={<PaymentLink pools={pools}/>}
+                            />
+                            <Route
+                                path="/getTokens"
+                                element={<TokenMarket  />}
+                            />
+                            <Route
+                                path="/pay/:opAmt/:recieverAddress/:toToken"
+                                element={<PaymentTerminal pools={pools} />}
+                            />
+                        </Routes>
+                    )
+                ) : (
+                    <ConnectWallet />
+                )}
+            </BrowserRouter>
+        </div>
     );
 }
 

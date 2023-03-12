@@ -2,36 +2,24 @@ const fetch = require("node-fetch"); //npm install node-fetch
 // import fetch from 'node-fetch';
 
 exports.handler = async function (event) {
-    const dict = JSON.parse(event.body);
+    const address = JSON.parse(event.body);
     const url = process.env.ASTRA_GRAPHQL_ENDPOINT;
-    
+    // console.log(address);
     const query = `
-    mutation {
-        position: insertpositions(
-        value: {
-            address: "${dict["address"]}",
-            pairAddress: "${dict["pairAddress"]}",
-            time: "${dict["time"]}",
-            date: "${dict["date"]}",
-            liquidity: ${dict["liquidity"]},
-            token1Address: "${dict["token1Address"]}",
-            token2Address: "${dict["token2Address"]}",
-            token1Amount:${dict["token1Amount"]},
-            token2Amount:${dict["token2Amount"]},
-            open: ${dict["open"]},
+    query {
+        tokens (value: {address:"${address}"}){ 
+          values {
+            address
+            imageURL
+            symbol
+            eth
+          }
         }
-    )
-        
-        {
-                value{
-                        address
-                    }
-                
-            }
-        }
+      }
     `;
 
-    // console.log(query)  
+    // console.log(query);
+
     const response = await fetch(url, {
         method: "POST",
         headers: {

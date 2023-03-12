@@ -12,13 +12,18 @@
       "inputs": [
         {
           "internalType": "string",
-          "name": "name",
+          "name": "_name",
           "type": "string"
         },
         {
           "internalType": "string",
           "name": "symbol",
           "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "ogSupply",
+          "type": "uint256"
         }
       ],
       "name": "addToken",

@@ -7,8 +7,10 @@ import ToBalance from "./ToBalance";
 import SwapButton from "./SwapButton";
 import LoadingSpinner from "../loading/LoadingSpinner";
 import LoadingOverlay from "../loading/LoadingOverlay";
-import Settings from "./settings/Settings";
+import Settings from "../settings/Settings";
 import { WETH } from "../../utils/helpers";
+import SuccessOverlay from "../loading/SuccessOverlay";
+import ErrorOverlay from "../error/ErrorOverlay";
 
 export default function Swap(props) {
     const {
@@ -23,6 +25,10 @@ export default function Swap(props) {
         swapExactETHForTokens,
         swapExactTokensForETH,
         getOutputAmount,
+        lockBscToken,
+        getWrappedBscTokenAddressETH,
+        chainSwitcher,
+        burnWrappedTokens,
     } = useContext(EelswapContext);
 
     const [loading, setLoading] = useState(false);
@@ -30,13 +36,15 @@ export default function Swap(props) {
     const [toToken, setToToken] = useState("");
     const [fromAmount, setfromAmount] = useState("");
     const [opAmt, setOpAmt] = useState("");
-
+    const [showEndMsg, setShowEndMsg] = useState(false);
     const [fromTokenName, setFromTokenName] = useState("");
     const [toTokenName, setToTokenName] = useState("");
 
     const [showSettings, setShowSettings] = useState(false);
     const [slippage, setSlippage] = useState("");
-    const [deadline, setDeadline] = useState("10");
+    const [deadline, setDeadline] = useState("");
+    const [finalInputAmount, setFinalInputAmount] = useState("");
+    const [finalOutAmount, setFinalOutAmount] = useState("");
 
     let availableTokens = getAvailableTokens(props.pools);
     let counterpartTokens = getCounterpartTokens(props.pools, fromToken);
@@ -44,6 +52,8 @@ export default function Swap(props) {
 
     const [fromBalance, setFromBalance] = useState("");
     const [toBalance, setToBalance] = useState("");
+    const [showError, setShowError] = useState(false);
+    const [errorMsg, setErrorMsg] = useState("");
 
     useEffect(() => {
         if (props.pools.length !== 0) {
@@ -63,7 +73,8 @@ export default function Swap(props) {
     };
 
     const getTimestampInSeconds = () => {
-        return Math.floor(Date.now() / 1000);
+        const now = new Date();
+        return Math.floor(now.getTime() / 1000);
     };
 
     const toggleSettings = () => {
@@ -85,6 +96,18 @@ export default function Swap(props) {
         setfromAmount(event.target.value);
     };
 
+    const getTokenData = async (address) => {
+        console.log(address);
+        await new Promise((resolve) => setTimeout(resolve, 1000)); // delay of 1 second (1000 milliseconds)
+        const response = await fetch("/.netlify/functions/getToken", {
+            method: "POST",
+            body: JSON.stringify(address),
+        });
+
+        const responseBody = await response.json();
+        return responseBody.data.tokens.values[0];
+    };
+
     const onClickSwap = async (event) => {
         setLoading(true);
         console.log(fromToken);
@@ -93,32 +116,91 @@ export default function Swap(props) {
         let inputAmt = parseInt(fromAmount);
 
         let currentTime = getTimestampInSeconds();
-        console.log(currentTime)
-
-        currentTime += parseInt(deadline) * 60;
         console.log(currentTime);
 
-        if (fromToken === WETH) {
-            let token = toToken;
+        try {
+            //Cross chain for tokenIN
+            let fromTokenData = await getTokenData(fromToken);
+            let amountOut;
 
-            // await swapExactETHForTokens(token, fromAmount, 1, currentTime);
-            await swapExactETHForTokens(token, inputAmt, (100-slippage) / 100 * inputAmt, currentTime);
+            if (!fromTokenData["eth"]) {
+                console.log("bsc token found");
+                let bscAddress = await getWrappedBscTokenAddressETH(fromToken);
+                await chainSwitcher(97);
+                await lockBscToken(bscAddress, inputAmt);
+                await chainSwitcher(5);
+            }
 
-        } else {
+            let defaultSlippage = 50;
+            let defaultDeadline = 10;
+            let finalDeadline
+            let finalSlippage
 
-            await swapExactTokensForTokens(
-                fromToken,
-                toToken,
-                inputAmt,
-                (100-slippage) / 100 * inputAmt,
-                currentTime
-            );
+            if (slippage === "") {
+                finalSlippage = defaultSlippage
+            }
+            if (deadline === "") {
+                currentTime += parseInt(defaultDeadline) * 60;
+                console.log(currentTime);
+                finalDeadline = currentTime
+            } else {
+                currentTime += parseInt(deadline) * 60;
+                console.log(currentTime);
+                finalDeadline = currentTime
+            }
+
+            if (fromToken === WETH) {
+                let token = toToken;
+
+                // await swapExactETHForTokens(token, fromAmount, 1, currentTime);
+                // await swapExactETHForTokens(token, inputAmt, (100-slippage) / 100 * inputAmt, currentTime);
+
+                amountOut = await swapExactETHForTokens(
+                    token,
+                    inputAmt,
+                    Math.floor(((100 - finalSlippage) / 100) * inputAmt),
+                    finalDeadline,
+                    connected
+                );
+            } else {
+                amountOut = await swapExactTokensForTokens(
+                    fromToken,
+                    toToken,
+                    inputAmt,
+                    Math.floor(((100 - finalSlippage) / 100) * inputAmt),
+                    finalDeadline,
+                    connected
+                );
+            }
+            setFinalInputAmount(inputAmt);
+            setFinalOutAmount(amountOut);
+            // cross chain for tokenOut1
+            let toTokenData = await getTokenData(toToken);
+            if (!toTokenData["eth"]) {
+                console.log("toToken is bsc token");
+                console.log(amountOut);
+                burnWrappedTokens(toTokenData["address"], amountOut);
+            }
+
+            setLoading(false);
+            setToToken("");
+            setfromAmount("");
+            setShowEndMsg(true);
+            setSlippage("");
+            setDeadline("");
+        } catch (e) {
+            console.log(e.message);
+            setLoading(false);
+            setErrorMsg(e.message);
+            setShowError(true);
+            setSlippage("");
+            setDeadline("");
         }
-
-        setLoading(false);
-        setToToken("");
-        setfromAmount("");
     };
+
+    // useEffect(() => {
+
+    // }, [onClickSwap])
 
     return props.loading || loading ? (
         <LoadingOverlay
@@ -164,7 +246,7 @@ export default function Swap(props) {
                                 availableTokens={availableTokens}
                                 amount={fromAmount}
                                 onAmountChange={fromAmountChange}
-                                setTokenName={setToTokenName}
+                                setTokenName={setFromTokenName}
                             />
                             <FromBalance fromToken={fromToken} />
                         </div>
@@ -197,6 +279,25 @@ export default function Swap(props) {
                                 slippage={slippage}
                                 onDeadlineChange={onDeadlineChange}
                                 onSlippageChange={onSlippageChange}
+                            />
+                        )}
+                        {showEndMsg && (
+                            <SuccessOverlay
+                                title={
+                                    "Please wait for your transaction to complete"
+                                }
+                                loading={loading}
+                                message1={`Successfully swapped ${finalInputAmount} ${fromTokenName} tokens for ${finalOutAmount} ${toTokenName} tokens`}
+                                message2={``}
+                                setShowEndMsg={setShowEndMsg}
+                            />
+                        )}
+                        {showError && (
+                            <ErrorOverlay
+                                title="Error"
+                                message1={errorMsg}
+                                message2="Please try again"
+                                setError={setShowError}
                             />
                         )}
                     </div>

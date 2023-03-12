@@ -6,8 +6,6 @@ import Settings from "../../settings/Settings";
 
 export default function ClosePositionOverlay(props) {
     const [open, setOpen] = useState(true);
-    const [supply, setSupply] = useState("");
-    const [ownedSupply, setOwnedSupply] = useState("");
     const cancelButtonRef = useRef(null);
 
     const [showSettings, setShowSettings] = useState(false);
@@ -16,11 +14,7 @@ export default function ClosePositionOverlay(props) {
     };
 
     const handleSupplyChange = (event) => {
-        setSupply(event.target);
-    };
-
-    const handleOwnedSupplyChange = (event) => {
-        setOwnedSupply(event.target);
+        props.setAmount(event.target.value);
     };
 
     return (
@@ -54,18 +48,18 @@ export default function ClosePositionOverlay(props) {
                             leaveFrom="opacity-100 translate-y-0 sm:scale-100"
                             leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                         >
-                            <Dialog.Panel className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-                                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                            <Dialog.Panel className="relative transform overflow-hidden rounded-lg text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                                <div className="bg-swapBlack px-4 pt-5 pb-4 sm:p-6 sm:pb-4 text-white">
                                     <div className="sm:flex sm:items-start justify-center">
                                         <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
                                             <Dialog.Title
                                                 as="h3"
-                                                className="text-lg font-medium leading-6 text-gray-900 text-center"
+                                                className="text-lg font-medium leading-6 text-center"
                                             >
                                                 How much liquidity tokens would
                                                 you like to remove?
                                             </Dialog.Title>
-                                            <div className="pt-2 flex flex-row text-black justify-end">
+                                            <div className="pt-2 flex flex-row text-white justify-end">
                                                 <button
                                                     onClick={toggleSettings}
                                                 >
@@ -96,55 +90,82 @@ export default function ClosePositionOverlay(props) {
                                                 <LoadingSpinner />
                                             ) : (
                                                 // <div className="shadow sm:overflow-hidden sm:rounded-md">
-                                                <div className="space-y-6 bg-white px-4 py-5 sm:p-6">
-                                                    <div className="grid grid-cols-3 gap-6">
-                                                        <div className="col-span-3 sm:col-span-2">
-                                                            <label
-                                                                htmlFor="company-website"
-                                                                className="block text-sm font-medium text-gray-700"
-                                                            >
-                                                                Liquidity to
-                                                                remove
-                                                            </label>
-                                                            <div className="mt-1 flex rounded-md shadow-sm flex-row w-full">
-                                                                <input
-                                                                    type="text"
-                                                                    // name="company-website"
-                                                                    // id="company-website"
-                                                                    className="h-6 block w-full flex-1 rounded-none rounded-l focus:border-indigo-500 focus:ring-indigo-500 border-black  sm:text-sm"
-                                                                    placeholder="e.g. 1000000"
-                                                                    value={
-                                                                        supply
-                                                                    }
-                                                                    onChange={
-                                                                        handleSupplyChange
-                                                                    }
-                                                                />
-                                                                <button className="h-6 bg-green-400 rounded-r text-sm px-1">
-                                                                    MAX
-                                                                </button>
-                                                            </div>
+                                                // <div className="space-y-6 px-4 py-5 sm:p-6">
+                                                //     <div className="grid grid-cols-3 gap-6">
+                                                //         <div className="col-span-3 sm:col-span-2 justify-center">
+                                                //             <label
+                                                //                 htmlFor="company-website"
+                                                //                 className="block text-sm font-medium"
+                                                //             >
+                                                //                 Liquidity to
+                                                //                 remove
+                                                //             </label>
+                                                //             <div className="mt-1 flex rounded-md shadow-sm flex-row w-full ">
+                                                //                 <div className="flex flex-row border-[1px] border-transparent hover:border-slate-600 rounded-md bg-slate-800">
+                                                //                     <input
+                                                //                         type="text"
+                                                //                         // name="company-website"
+                                                //                         // id="company-website"
+                                                //                         className="block w-full sm:text-sm outline-none bg-transparent pl-2"
+                                                //                         placeholder="e.g. 1000000"
+                                                //                         value={
+                                                //                             props.amount
+                                                //                         }
+                                                //                         onChange={
+                                                //                             handleSupplyChange
+                                                //                         }
+                                                //                     />
+                                                //                     <button className="block p-2 bg-green-600 rounded-r text-sm px-1">
+                                                //                         MAX
+                                                //                     </button>
+                                                //                 </div>
+                                                //             </div>
+
+                                                //         </div>
+                                                //     </div>
+                                                // </div>
+                                                <div className="flex ml-24 my-8 flex-col w-full">
+                                                    <label
+                                                        htmlFor="company-website"
+                                                        className="block text-sm font-medium"
+                                                    >
+                                                        Liquidity to remove
+                                                    </label>
+                                                    <div className="mt-1 flex rounded-md shadow-sm flex-row w-full ">
+                                                        <div className="flex flex-row border-[1px] border-transparent hover:border-slate-600 rounded-md bg-slate-800">
+                                                            <input
+                                                                type="text"
+                                                                // name="company-website"
+                                                                // id="company-website"
+                                                                className="block w-full sm:text-sm outline-none bg-transparent pl-8"
+                                                                placeholder="e.g. 1000000"
+                                                                value={
+                                                                    props.amount
+                                                                }
+                                                                onChange={
+                                                                    handleSupplyChange
+                                                                }
+                                                            />
+                                                            <button className="block p-2 bg-green-600 rounded-r text-sm px-1">
+                                                                MAX
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </div>
                                                 // </div>
                                             )}
-                                            {/* <div className='w-full text-center'>
-                        <p>{props.message1}</p>
-                      </div>
-
-                      <div className='mt-2 w-full text-center text-gray-500'>
-                        <p>{props.message2}</p>
-                      </div> */}
                                         </div>
                                     </div>
                                 </div>
-                                <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 justify-center">
+                                <div className="bg-swapBlack px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 justify-center">
                                     {!props.loading && (
                                         <button
                                             type="button"
                                             className="inline-flex w-full justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm"
-                                            onClick={props.confirmAddToken}
+                                            onClick={() => {
+                                                props.closePosition();
+                                                props.toggleOverlay();
+                                            }}
                                         >
                                             confirm
                                         </button>
@@ -154,10 +175,10 @@ export default function ClosePositionOverlay(props) {
                                     <Settings
                                         show={showSettings}
                                         toggleShow={toggleSettings}
-                                        // deadline={deadline}
-                                        // slippage={slippage}
-                                        // onDeadlineChange={onDeadlineChange}
-                                        // onSlippageChange={onSlippageChange}
+                                        deadline={props.deadline}
+                                        slippage={props.slippage}
+                                        onDeadlineChange={props.onDeadlineChange}
+                                        onSlippageChange={props.onSlippageChange}
                                     />
                                 )}
                             </Dialog.Panel>

@@ -5,20 +5,17 @@ export default function Deadline(props) {
         <div className="m-2">
             <label
                 htmlFor="price"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium"
             >
                 Transaction Deadline
             </label>
             <div className="relative mt-1 rounded-md ">
-                {/* <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                    <span className="text-gray-500 sm:text-sm">$</span>
-                </div> */}
-                <div className="flex flex-row">
+                <div className="flex flex-row p-2 border-[1px] border-transparent hover:border-slate-600 rounded-md bg-slate-800">
                     <input
                         type="text"
                         name="time"
                         id="time"
-                        className="shadow-sm block w-full rounded-md border-gray-300 pl-7 pr-12 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        className=" block w-full pl-7 pr-12 sm:text-sm outline-none bg-transparent"
                         placeholder="10"
                         onChange={props.onDeadlineChange}
                         value={props.deadline}
