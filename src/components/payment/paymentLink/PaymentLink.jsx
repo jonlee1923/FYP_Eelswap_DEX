@@ -44,7 +44,7 @@ export default function PaymentLink(props) {
     const generateQr = () => {
         console.log("generateQr");
         setQrCodestring(
-            `http://localhost:8888/pay/${amount}/${address}/${fromToken}`
+            `http://eelswap.netlify.app/pay/${amount}/${address}/${fromToken}`
         );
         setShowQr(true);
     };
