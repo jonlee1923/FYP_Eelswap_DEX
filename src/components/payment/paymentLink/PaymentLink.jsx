@@ -44,7 +44,9 @@ export default function PaymentLink(props) {
     const generateQr = () => {
         console.log("generateQr");
         setQrCodestring(
-            `https://eelswap.netlify.app/pay/${amount}/${address}/${fromToken}`
+            // `https://eelswap.netlify.app/pay/${amount}/${address}/${fromToken}`
+            `http://localhost:8888/pay/${amount}/${address}/${fromToken}`
+
         );
         setShowQr(true);
     };
@@ -141,7 +143,7 @@ export default function PaymentLink(props) {
                         <div className="flex-col text-white text-center">
                             <QRCode size={200} value={qrCodestring} />
                             <p>Or</p>
-                            <a href={qrCodestring} target="_blank" className="underline text-blue-500">
+                            <a href={qrCodestring}  className="underline text-blue-500">
                                 Click here
                             </a>
                         </div>

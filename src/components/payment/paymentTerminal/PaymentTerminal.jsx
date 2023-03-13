@@ -82,7 +82,8 @@ export default function PaymentTerminal(props) {
         if (toToken !== undefined && toToken !== "") {
             let value = await getInputAmount(opAmt, fromToken, toToken);
             console.log(value);
-            if (Number.isNan(parseInt(value))) {
+            // if (!Number.isNan(value)) {
+            if( typeof value === 'string'){
                 setAmountIn(parseInt(value));
             }
         }
