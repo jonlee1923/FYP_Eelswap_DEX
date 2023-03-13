@@ -139,7 +139,7 @@ export default function PaymentLink(props) {
                             Reset
                         </button>
                         <div className="flex-col text-white text-center">
-                            <QRCode size={100} value={qrCodestring} />
+                            <QRCode size={200} value={qrCodestring} />
                             <p>Or</p>
                             <a href={qrCodestring} target="_blank" className="underline text-blue-500">
                                 Click here
