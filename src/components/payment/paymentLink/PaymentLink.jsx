@@ -37,16 +37,15 @@ export default function PaymentLink(props) {
     };
 
     const fromTokenChange = (value) => {
-        console.log("from: ",value);
+        console.log("from: ", value);
         setFromToken(value);
     };
 
     const generateQr = () => {
         console.log("generateQr");
         setQrCodestring(
-            // `https://eelswap.netlify.app/pay/${amount}/${address}/${fromToken}`
-            `http://localhost:8888/pay/${amount}/${address}/${fromToken}`
-
+            `https://eelswap.netlify.app/pay/${amount}/${address}/${fromToken}`
+            // `http://localhost:8888/pay/${amount}/${address}/${fromToken}`
         );
         setShowQr(true);
     };
@@ -77,8 +76,8 @@ export default function PaymentLink(props) {
     // };
 
     return (
-        <div className="flex justify-center h-full mb-16">
-            <div className="flex-col bg-swapBlack h-full sm:h-7/8  w-5/12 rounded-lg p-8 m-8 space-y-6">
+        <div className="flex justify-center mb-16">
+            <div className="flex-col bg-swapBlack h-full w-5/12 rounded-lg p-8 m-8 space-y-6">
                 <TokenIn
                     fromToken={fromToken}
                     onTokenChange={fromTokenChange}
@@ -132,23 +131,28 @@ export default function PaymentLink(props) {
                     )}
                 </div>
 
-                {showQr && (
-                    <div className="flex flex-row items-center justify-around">
-                        <button
-                            className="text-white bg-green-600 rounded-md py-2 px-4"
-                            onClick={resetQrcode}
-                        >
-                            Reset
-                        </button>
-                        <div className="flex-col text-white text-center">
-                            <QRCode size={200} value={qrCodestring} />
-                            <p>Or</p>
-                            <a href={qrCodestring}  className="underline text-blue-500">
-                                Click here
-                            </a>
+                <div className="h-200 w-200">
+                    {showQr && (
+                        <div className="flex flex-row items-center justify-around">
+                            <button
+                                className="text-white bg-green-600 rounded-md py-2 px-4"
+                                onClick={resetQrcode}
+                            >
+                                Reset
+                            </button>
+                            <div className="flex-col text-white text-center">
+                                <QRCode size={200} value={qrCodestring} />
+                                <p>Or</p>
+                                <a
+                                    href={qrCodestring}
+                                    className="underline text-blue-500"
+                                >
+                                    Click here
+                                </a>
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </div>
     );

@@ -183,7 +183,7 @@ export default function PaymentTerminal(props) {
     };
     return (
         <div className="flex justify-center h-screen">
-            <div className="flex-col bg-swapBlack h-2/5 sm:h-3/5 w-4/5 sm:w-1/2 rounded-lg p-8 m-8 mt-16 space-y-8">
+            <div className="flex-col bg-swapBlack h-3/4 sm:h-3/5 w-4/5 sm:w-1/2 rounded-lg p-8 m-8 mt-16 space-y-8">
                 {/* <div className=""> */}
                 <TokenOut
                     toToken={toToken}
